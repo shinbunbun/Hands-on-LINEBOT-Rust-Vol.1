@@ -12,8 +12,9 @@ use line_bot_sdk::{
         },
         message::{
             flex::{
-                FlexBlockStyle, FlexBox, FlexBubble, FlexBubbleStyles, FlexButton, FlexImage,
-                FlexMessage, FlexSeparator, FlexText,
+                FlexBlockStyle, FlexBox, FlexBoxComponent, FlexBubble, FlexBubbleStyles,
+                FlexButton, FlexCarousel, FlexContainer, FlexHero, FlexImage, FlexMessage,
+                FlexSeparator, FlexText,
             },
             imagemap::ImagemapURIAction,
             quick_reply::{QuickReply, QuickReplyItem},
@@ -448,9 +449,96 @@ pub async fn text_event(
 
             let articles = news_api_res.articles;
             for article in articles {
-                message.push(TextMessage::builder().text(&format!("【画像URL】: {}\n【タイトル】: {}\n【公開日】: {}\n【概要】: {}\n【記事のURL】: {}\n【掲載元】: {}", article.url_to_image, article.title, article.published_at, article.description, article.url, article.source.name)).build().into());
+                message.push(TextMessage::builder().text(&format!("【画像URL】: {}\n【タイトル】: {}\n【公開日】: {}\n【概要】: {}\n【記事のURL】: {}\n【掲載元】: {}", article.url_to_image.unwrap_or("null".to_string()), article.title.unwrap_or_else(|| "null".to_string()), article.published_at.unwrap_or_else(|| "null".to_string()), article.description.unwrap_or_else(||"null".to_string()), article.url.unwrap_or_else(||"null".to_string()), article.source.name.unwrap_or_else(||"null".to_string()))).build().into());
             }
             message
+        },
+        "ニュース2" => {
+            let news_api_res = reqwest::get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY").map_err(AppError::EnvError)?)).await.map_err(AppError::ReqwestError)?.json::<news::Root>().await.map_err(AppError::ReqwestError)?;
+            let mut message = FlexMessage::builder()
+            .alt_text("ニュース一覧")
+            .contents(
+                FlexContainer::Carousel(
+                    FlexCarousel::builder()
+                    .contents(
+                        vec![]
+                    ).build()
+                )
+            ).build();
+
+            let articles = news_api_res.articles;
+            for article in articles {
+                if let FlexContainer::Carousel(ref mut carousel) = message.contents {
+                    carousel.contents.push(FlexBubble::builder()
+                    .size("kilo")
+                    .hero(
+                        FlexHero::Image(
+                            FlexImage::builder()
+                            .url(&article.url_to_image.unwrap_or_else(||"https://raw.githubusercontent.com/shinbunbun/aizuhack-bot/master/media/imagemap.png".to_owned()))
+                            .size("full")
+                            .aspect_mode("cover")
+                            .build()
+                            .into()
+                        )
+                        
+                    )
+                    .body(
+                        FlexBox::builder()
+                        .layout("vertical")
+                        .contents(
+                            vec![
+                                FlexBoxComponent::Text(
+                                    Box::new(FlexText::builder()
+                                    .weight("bold")
+                                    .size("sm")
+                                    .wrap(true)
+                                    .text(&article.title.unwrap_or_else(|| "No title".to_string()))
+                                    .build())
+                                ),
+                                FlexBoxComponent::Text(
+                                    Box::new(FlexText::builder()
+                                    .size("xs")
+                                    .wrap(true)
+                                    .text(&article.published_at.unwrap_or_else(|| "No published_at".to_string()))
+                                    .build())
+                                ),
+                                FlexBoxComponent::Text(
+                                    Box::new(FlexText::builder()
+                                    .size("sm")
+                                    .wrap(true)
+                                    .text(&article.description.unwrap_or_else(|| "No description".to_string()))
+                                    .build())
+                                ),
+                            ]
+                        )
+                        .spacing("md")
+                        .build()
+                    )
+                    .footer(
+                        FlexBox::builder()
+                        .layout("vertical")
+                        .contents(
+                            vec![
+                                FlexBoxComponent::Button(
+                                    FlexButton::builder()
+                                    .action(
+                                        URIAction::builder()
+                                        .uri(&article.url.unwrap_or_else(|| "https://example.com".to_string()))
+                                        .label(&article.source.name.unwrap_or_else(|| "No source name".to_string()))
+                                        .build()
+                                        .into()
+                                    )
+                                    .style("primary")
+                                    .build()
+                                    .into()
+                                )
+                            ]
+                        )
+                        .build()
+                    ).build())
+                }
+            }
+            vec![message.into()]
         },
         _ => vec![
                 TextMessage::builder()
