@@ -1,3 +1,5 @@
+use std::env;
+
 use line_bot_sdk::{
     models::{
         action::{
@@ -29,7 +31,7 @@ use line_bot_sdk::{
     Client,
 };
 
-use crate::{error::AppError, weather};
+use crate::{error::AppError, news, weather};
 
 pub async fn text_event(
     client: &Client,
@@ -439,6 +441,16 @@ pub async fn text_event(
              weather_api_res[0].time_series[0].areas[2].weathers.as_ref().unwrap_or(&vec!["".to_string()])[2],
             );
             vec![TextMessage::builder().text(&text).build().into()]
+        },
+        "ニュース1" => {
+            let news_api_res = reqwest::get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY").map_err(AppError::EnvError)?)).await.map_err(AppError::ReqwestError)?.json::<news::Root>().await.map_err(AppError::ReqwestError)?;
+            let mut message: Vec<MessageObject> = Vec::new();
+
+            let articles = news_api_res.articles;
+            for article in articles {
+                message.push(TextMessage::builder().text(&format!("【画像URL】: {}\n【タイトル】: {}\n【公開日】: {}\n【概要】: {}\n【記事のURL】: {}\n【掲載元】: {}", article.url_to_image, article.title, article.published_at, article.description, article.url, article.source.name)).build().into());
+            }
+            message
         },
         _ => vec![
                 TextMessage::builder()

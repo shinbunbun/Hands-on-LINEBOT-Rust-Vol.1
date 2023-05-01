@@ -3,6 +3,7 @@ pub enum AppError {
     BadRequest(String),
     LineBotSdkError(line_bot_sdk::Error),
     ReqwestError(reqwest::Error),
+    EnvError(std::env::VarError),
 }
 
 impl std::fmt::Display for AppError {
@@ -11,6 +12,7 @@ impl std::fmt::Display for AppError {
             AppError::BadRequest(errors) => write!(f, "Bad Request: {}", errors),
             AppError::LineBotSdkError(errors) => write!(f, "line bot sdk error: {}", errors),
             AppError::ReqwestError(errors) => write!(f, "reqwest error: {}", errors),
+            AppError::EnvError(errors) => write!(f, "env error: {}", errors),
         }
     }
 }
