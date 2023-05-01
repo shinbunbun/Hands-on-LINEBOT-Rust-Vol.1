@@ -29,7 +29,7 @@ use line_bot_sdk::{
     Client,
 };
 
-use crate::error::AppError;
+use crate::{error::AppError, weather};
 
 pub async fn text_event(
     client: &Client,
@@ -427,7 +427,19 @@ pub async fn text_event(
                     .into(),
                 ]
             }
-        }
+        },
+        "天気予報" => {
+            let weather_api_res = reqwest::get("https://www.jma.go.jp/bosai/forecast/data/forecast/070000.json").await.map_err(AppError::ReqwestError)?.json::<weather::Root>().await.map_err(AppError::ReqwestError)?;
+            let text = format!("【天気予報】\n\n{}: {}\n{}: {}\n{}: {}",
+             weather_api_res[0].time_series[0].time_defines[0],
+             weather_api_res[0].time_series[0].areas[2].weathers.as_ref().unwrap_or(&vec!["".to_string()])[0],
+             weather_api_res[0].time_series[0].time_defines[1],
+             weather_api_res[0].time_series[0].areas[2].weathers.as_ref().unwrap_or(&vec!["".to_string()])[1],
+             weather_api_res[0].time_series[0].time_defines[2],
+             weather_api_res[0].time_series[0].areas[2].weathers.as_ref().unwrap_or(&vec!["".to_string()])[2],
+            );
+            vec![TextMessage::builder().text(&text).build().into()]
+        },
         _ => vec![
                 TextMessage::builder()
                 .text(&format!("受け取ったメッセージ: {}\nそのメッセージの返信には対応してません...", message.text))
