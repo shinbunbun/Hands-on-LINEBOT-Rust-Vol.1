@@ -6,6 +6,7 @@ mod router;
 use std::{env, sync::Arc};
 
 use actix_web::{middleware::Logger, web, App, HttpServer};
+use dotenv::dotenv;
 use line_bot_sdk::Client;
 use router::router;
 
@@ -16,6 +17,7 @@ pub struct AppState {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
+    dotenv().ok();
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
@@ -27,7 +29,7 @@ async fn main() -> std::io::Result<()> {
                 )),
             }))
     })
-    .bind(("localhost", 8080))?
+    .bind(("0.0.0.0", 8080))?
     .run()
     .await
 }
