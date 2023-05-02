@@ -1,3 +1,5 @@
+use std::env;
+
 use line_bot_sdk::{
     models::{
         action::{
@@ -10,8 +12,9 @@ use line_bot_sdk::{
         },
         message::{
             flex::{
-                FlexBlockStyle, FlexBox, FlexBubble, FlexBubbleStyles, FlexButton, FlexImage,
-                FlexMessage, FlexSeparator, FlexText,
+                FlexBlockStyle, FlexBox, FlexBoxComponent, FlexBubble, FlexBubbleStyles,
+                FlexButton, FlexCarousel, FlexContainer, FlexHero, FlexImage, FlexMessage,
+                FlexSeparator, FlexText,
             },
             imagemap::ImagemapURIAction,
             quick_reply::{QuickReply, QuickReplyItem},
@@ -29,7 +32,7 @@ use line_bot_sdk::{
     Client,
 };
 
-use crate::error::AppError;
+use crate::{error::AppError, news, weather};
 
 pub async fn text_event(
     client: &Client,
@@ -427,7 +430,159 @@ pub async fn text_event(
                     .into(),
                 ]
             }
-        }
+        },
+        "天気予報" => {
+            let weather_api_res = reqwest::get("https://www.jma.go.jp/bosai/forecast/data/forecast/070000.json").await.map_err(AppError::ReqwestError)?.json::<weather::Root>().await.map_err(AppError::ReqwestError)?;
+            let text = format!("【天気予報】\n\n{}: {}\n{}: {}\n{}: {}",
+             weather_api_res[0].time_series[0].time_defines[0],
+             weather_api_res[0].time_series[0].areas[2].weathers.as_ref().unwrap_or(&vec!["".to_string()])[0],
+             weather_api_res[0].time_series[0].time_defines[1],
+             weather_api_res[0].time_series[0].areas[2].weathers.as_ref().unwrap_or(&vec!["".to_string()])[1],
+             weather_api_res[0].time_series[0].time_defines[2],
+             weather_api_res[0].time_series[0].areas[2].weathers.as_ref().unwrap_or(&vec!["".to_string()])[2],
+            );
+            vec![TextMessage::builder().text(&text).build().into()]
+        },
+        "ニュース1" => {
+            let client = reqwest::Client::builder()
+            .user_agent(concat!(
+                env!("CARGO_PKG_NAME"),
+                "/",
+                env!("CARGO_PKG_VERSION"),
+            ))
+            .build()
+            .map_err(AppError::ReqwestError)?;
+
+            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY").map_err(AppError::EnvError)?))
+            .send()
+            .await
+            .map_err(AppError::ReqwestError)?
+            .json::<news::Root>()
+            .await
+            .map_err(AppError::ReqwestError)?;
+
+            let mut message: Vec<MessageObject> = Vec::new();
+
+            let articles = news_api_res.articles;
+            for article in articles {
+                message.push(
+                    TextMessage::builder()
+                    .text(&format!(
+                        "【画像URL】: {}\n【タイトル】: {}\n【公開日】: {}\n【概要】: {}\n【記事のURL】: {}\n【掲載元】: {}",
+                        article.url_to_image.unwrap_or_else(||"null".to_string()),
+                        article.title.unwrap_or_else(|| "null".to_string()),
+                        article.published_at.unwrap_or_else(|| "null".to_string()),
+                        article.description.unwrap_or_else(||"null".to_string()),
+                        article.url.unwrap_or_else(||"null".to_string()),
+                        article.source.name.unwrap_or_else(||"null".to_string())))
+                    .build().into()
+                );
+            }
+            message
+        },
+        "ニュース2" => {
+            let client = reqwest::Client::builder()
+            .user_agent(concat!(
+                env!("CARGO_PKG_NAME"),
+                "/",
+                env!("CARGO_PKG_VERSION"),
+            ))
+            .build()
+            .map_err(AppError::ReqwestError)?;
+
+            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY").map_err(AppError::EnvError)?))
+            .send()
+            .await
+            .map_err(AppError::ReqwestError)?
+            .json::<news::Root>()
+            .await
+            .map_err(AppError::ReqwestError)?;
+        
+            let mut message = FlexMessage::builder()
+            .alt_text("ニュース一覧")
+            .contents(
+                FlexContainer::Carousel(
+                    FlexCarousel::builder()
+                    .contents(
+                        vec![]
+                    ).build()
+                )
+            ).build();
+
+            let articles = news_api_res.articles;
+            for article in articles {
+                if let FlexContainer::Carousel(ref mut carousel) = message.contents {
+                    carousel.contents.push(FlexBubble::builder()
+                    .size("kilo")
+                    .hero(
+                        FlexHero::Image(
+                            FlexImage::builder()
+                            .url(&article.url_to_image.unwrap_or_else(||"https://raw.githubusercontent.com/shinbunbun/aizuhack-bot/master/media/imagemap.png".to_owned()))
+                            .size("full")
+                            .aspect_mode("cover")
+                            .build()
+                            .into()
+                        )
+                        
+                    )
+                    .body(
+                        FlexBox::builder()
+                        .layout("vertical")
+                        .contents(
+                            vec![
+                                FlexBoxComponent::Text(
+                                    Box::new(FlexText::builder()
+                                    .weight("bold")
+                                    .size("sm")
+                                    .wrap(true)
+                                    .text(&article.title.unwrap_or_else(|| "No title".to_string()))
+                                    .build())
+                                ),
+                                FlexBoxComponent::Text(
+                                    Box::new(FlexText::builder()
+                                    .size("xs")
+                                    .wrap(true)
+                                    .text(&article.published_at.unwrap_or_else(|| "No published_at".to_string()))
+                                    .build())
+                                ),
+                                FlexBoxComponent::Text(
+                                    Box::new(FlexText::builder()
+                                    .size("sm")
+                                    .wrap(true)
+                                    .text(&article.description.unwrap_or_else(|| "No description".to_string()))
+                                    .build())
+                                ),
+                            ]
+                        )
+                        .spacing("md")
+                        .build()
+                    )
+                    .footer(
+                        FlexBox::builder()
+                        .layout("vertical")
+                        .contents(
+                            vec![
+                                FlexBoxComponent::Button(
+                                    FlexButton::builder()
+                                    .action(
+                                        URIAction::builder()
+                                        .uri(&article.url.unwrap_or_else(|| "https://example.com".to_string()))
+                                        .label(&article.source.name.unwrap_or_else(|| "No source name".to_string()))
+                                        .build()
+                                        .into()
+                                    )
+                                    .style("primary")
+                                    .build()
+                                    .into()
+                                )
+                            ]
+                        )
+                        .build()
+                    ).build())
+                }
+            }
+            vec![message.into()]
+        },
         _ => vec![
                 TextMessage::builder()
                 .text(&format!("受け取ったメッセージ: {}\nそのメッセージの返信には対応してません...", message.text))

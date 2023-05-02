@@ -1,7 +1,9 @@
 mod error;
 mod event;
 mod handler;
+mod news;
 mod router;
+mod weather;
 
 use std::{env, sync::Arc};
 
