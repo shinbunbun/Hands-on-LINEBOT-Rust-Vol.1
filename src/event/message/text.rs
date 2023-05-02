@@ -444,7 +444,23 @@ pub async fn text_event(
             vec![TextMessage::builder().text(&text).build().into()]
         },
         "ニュース1" => {
-            let news_api_res = reqwest::get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY").map_err(AppError::EnvError)?)).await.map_err(AppError::ReqwestError)?.json::<news::Root>().await.map_err(AppError::ReqwestError)?;
+            let client = reqwest::Client::builder()
+            .user_agent(concat!(
+                env!("CARGO_PKG_NAME"),
+                "/",
+                env!("CARGO_PKG_VERSION"),
+            ))
+            .build()
+            .map_err(AppError::ReqwestError)?;
+
+            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY").map_err(AppError::EnvError)?))
+            .send()
+            .await
+            .map_err(AppError::ReqwestError)?
+            .json::<news::Root>()
+            .await
+            .map_err(AppError::ReqwestError)?;
+
             let mut message: Vec<MessageObject> = Vec::new();
 
             let articles = news_api_res.articles;
@@ -454,7 +470,23 @@ pub async fn text_event(
             message
         },
         "ニュース2" => {
-            let news_api_res = reqwest::get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY").map_err(AppError::EnvError)?)).await.map_err(AppError::ReqwestError)?.json::<news::Root>().await.map_err(AppError::ReqwestError)?;
+            let client = reqwest::Client::builder()
+            .user_agent(concat!(
+                env!("CARGO_PKG_NAME"),
+                "/",
+                env!("CARGO_PKG_VERSION"),
+            ))
+            .build()
+            .map_err(AppError::ReqwestError)?;
+
+            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY").map_err(AppError::EnvError)?))
+            .send()
+            .await
+            .map_err(AppError::ReqwestError)?
+            .json::<news::Root>()
+            .await
+            .map_err(AppError::ReqwestError)?;
+        
             let mut message = FlexMessage::builder()
             .alt_text("ニュース一覧")
             .contents(
