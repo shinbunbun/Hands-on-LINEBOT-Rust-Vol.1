@@ -465,7 +465,18 @@ pub async fn text_event(
 
             let articles = news_api_res.articles;
             for article in articles {
-                message.push(TextMessage::builder().text(&format!("【画像URL】: {}\n【タイトル】: {}\n【公開日】: {}\n【概要】: {}\n【記事のURL】: {}\n【掲載元】: {}", article.url_to_image.unwrap_or("null".to_string()), article.title.unwrap_or_else(|| "null".to_string()), article.published_at.unwrap_or_else(|| "null".to_string()), article.description.unwrap_or_else(||"null".to_string()), article.url.unwrap_or_else(||"null".to_string()), article.source.name.unwrap_or_else(||"null".to_string()))).build().into());
+                message.push(
+                    TextMessage::builder()
+                    .text(&format!(
+                        "【画像URL】: {}\n【タイトル】: {}\n【公開日】: {}\n【概要】: {}\n【記事のURL】: {}\n【掲載元】: {}",
+                        article.url_to_image.unwrap_or_else(||"null".to_string()),
+                        article.title.unwrap_or_else(|| "null".to_string()),
+                        article.published_at.unwrap_or_else(|| "null".to_string()),
+                        article.description.unwrap_or_else(||"null".to_string()),
+                        article.url.unwrap_or_else(||"null".to_string()),
+                        article.source.name.unwrap_or_else(||"null".to_string())))
+                    .build().into()
+                );
             }
             message
         },
