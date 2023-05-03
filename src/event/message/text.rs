@@ -41,7 +41,7 @@ pub async fn text_event(
 ) -> Result<Option<Vec<MessageObject>>, AppError> {
     let messages: Vec<MessageObject> = match message.text.as_str() {
         "こんにちは" => vec![
-            TextMessage::builder().text("Hello, World").build().into(),
+            TextMessage::builder().text("こんにちは世界").build().into(),
         ],
         "複数メッセージ" => vec![
             TextMessage::builder().text("Hello, user").build().into(),
@@ -431,6 +431,96 @@ pub async fn text_event(
                 ]
             }
         },
+        "おはよう" => vec![
+            TextMessage::builder().text("Good Morning!").build().into(),
+        ],
+        "予定" => vec![
+            TextMessage::builder()
+            .text("予定を知りたい曜日を選んでください")
+            .quick_reply(
+                QuickReply::builder()
+                .items(vec![
+                    QuickReplyItem::builder()
+                    .action(
+                        MessageAction::builder()
+                        .label("月曜日")
+                        .text("月曜日の予定")
+                        .build()
+                        .into()
+                    )
+                    .build(),
+                    QuickReplyItem::builder()
+                    .action(
+                        MessageAction::builder()
+                        .label("火曜日")
+                        .text("火曜日の予定")
+                        .build()
+                        .into()
+                    )
+                    .build(),
+                    QuickReplyItem::builder()
+                    .action(
+                        MessageAction::builder()
+                        .label("水曜日")
+                        .text("水曜日の予定")
+                        .build()
+                        .into()
+                    )
+                    .build(),
+                    QuickReplyItem::builder()
+                    .action(
+                        MessageAction::builder()
+                        .label("木曜日")
+                        .text("木曜日の予定")
+                        .build()
+                        .into()
+                    )
+                    .build(),
+                    QuickReplyItem::builder()
+                    .action(
+                        MessageAction::builder()
+                        .label("金曜日")
+                        .text("金曜日の予定")
+                        .build()
+                        .into()
+                    )
+                    .build(),
+                ])
+                .build()
+            )
+            .build()
+            .into(),
+        ],
+        "月曜日の予定" => vec![
+            TextMessage::builder()
+            .text("1. 力学\n2. 力学\n3. 力学\n4. 力学\n5. 微積分\n6. 微積分")
+            .build()
+            .into(),
+        ],
+        "火曜日の予定" => vec![
+            TextMessage::builder()
+            .text("3. プログ0\n4. プログ0\n5. プログ0\n6. プログ0\n7. Eng2\n8. プログ0\n9. 経済学\n10. 経済学")
+            .build()
+            .into(),
+        ],
+        "水曜日の予定" => vec![
+            TextMessage::builder()
+            .text("3. 微積分\n4. 微積分")
+            .build()
+            .into(),
+        ],
+        "木曜日の予定" => vec![
+            TextMessage::builder()
+            .text("1. 力学\n2. 力学\n3. 力学\n4. 力学\n5. 微積分\n6. 微積分\n7. 体育実技\n8. 体育実技")
+            .build()
+            .into(),
+        ],
+        "金曜日の予定" => vec![
+            TextMessage::builder()
+            .text("3. プログ0\n4. プログ0\n5. プログ0\n6. プログ0\n7. Eng2\n8. プログ0\n9. 経済学\n10. 経済学")
+            .build()
+            .into(),
+        ],
         "天気予報" => {
             let weather_api_res = reqwest::get("https://www.jma.go.jp/bosai/forecast/data/forecast/070000.json").await.map_err(AppError::ReqwestError)?.json::<weather::Root>().await.map_err(AppError::ReqwestError)?;
             let text = format!("【天気予報】\n\n{}: {}\n{}: {}\n{}: {}",
