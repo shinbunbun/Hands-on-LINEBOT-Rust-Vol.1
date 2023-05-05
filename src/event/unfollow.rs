@@ -9,7 +9,7 @@ pub async fn index(event: &Event) -> Result<Option<Vec<MessageObject>>, AppError
             .source
             .user_id
             .as_ref()
-            .ok_or_else(|| AppError::BadRequest("userId not found".to_string()))?
+            .ok_or_else(|| AppError::Internal("userId not found".to_string()))?
     );
     Ok(None)
 }

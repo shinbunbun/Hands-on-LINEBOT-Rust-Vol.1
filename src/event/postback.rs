@@ -9,7 +9,7 @@ pub async fn index(event: &Event) -> Result<Option<Vec<MessageObject>>, AppError
     let postback = event
         .postback
         .as_ref()
-        .ok_or_else(|| AppError::BadRequest("postback not found".to_string()))?;
+        .ok_or_else(|| AppError::Internal("postback not found".to_string()))?;
     let res = match &postback.params {
         Some(params) => vec![TextMessage::builder()
             .text(&format!(
@@ -18,7 +18,7 @@ pub async fn index(event: &Event) -> Result<Option<Vec<MessageObject>>, AppError
                 params
                     .datetime
                     .clone()
-                    .ok_or_else(|| AppError::BadRequest("datetime not found".to_string()))?
+                    .ok_or_else(|| AppError::Internal("datetime not found".to_string()))?
             ))
             .build()
             .into()],

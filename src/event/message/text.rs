@@ -399,7 +399,7 @@ pub async fn text_event(
             ]
         },
         "プロフィール"=>{
-            let profile = client.profile(event.source.user_id.as_ref().ok_or_else(|| AppError::BadRequest("userId not found".to_string()))?).await.map_err(AppError::LineBotSdkError)?;
+            let profile = client.profile(event.source.user_id.as_ref().ok_or_else(|| AppError::Internal("userId not found".to_string()))?).await?;
             vec![
                 TextMessage::builder()
                 .text(&format!("あなたの名前: {}\nユーザーID: {}\nプロフィール画像のURL: {}\nステータスメッセージ: {}", profile.display_name, profile.user_id, profile.picture_url, profile.status_message.unwrap_or_else(|| "未設定".to_string())))
@@ -522,7 +522,7 @@ pub async fn text_event(
             .into(),
         ],
         "天気予報" => {
-            let weather_api_res = reqwest::get("https://www.jma.go.jp/bosai/forecast/data/forecast/070000.json").await.map_err(AppError::ReqwestError)?.json::<weather::Root>().await.map_err(AppError::ReqwestError)?;
+            let weather_api_res = reqwest::get("https://www.jma.go.jp/bosai/forecast/data/forecast/070000.json").await?.json::<weather::Root>().await?;
             let text = format!("【天気予報】\n\n{}: {}\n{}: {}\n{}: {}",
              weather_api_res[0].time_series[0].time_defines[0],
              weather_api_res[0].time_series[0].areas[2].weathers.as_ref().unwrap_or(&vec!["".to_string()])[0],
@@ -540,16 +540,13 @@ pub async fn text_event(
                 "/",
                 env!("CARGO_PKG_VERSION"),
             ))
-            .build()
-            .map_err(AppError::ReqwestError)?;
+            .build()?;
 
-            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY").map_err(AppError::EnvError)?))
+            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY")?))
             .send()
-            .await
-            .map_err(AppError::ReqwestError)?
+            .await?
             .json::<news::Root>()
-            .await
-            .map_err(AppError::ReqwestError)?;
+            .await?;
 
             let mut message: Vec<MessageObject> = Vec::new();
 
@@ -577,16 +574,13 @@ pub async fn text_event(
                 "/",
                 env!("CARGO_PKG_VERSION"),
             ))
-            .build()
-            .map_err(AppError::ReqwestError)?;
+            .build()?;
 
-            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY").map_err(AppError::EnvError)?))
+            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY")?))
             .send()
-            .await
-            .map_err(AppError::ReqwestError)?
+            .await?
             .json::<news::Root>()
-            .await
-            .map_err(AppError::ReqwestError)?;
+            .await?;
 
             let mut message = FlexMessage::builder()
             .alt_text("ニュース一覧")

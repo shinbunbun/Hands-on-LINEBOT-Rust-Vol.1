@@ -1,18 +1,13 @@
-#[derive(Debug)]
-pub enum AppError {
-    BadRequest(String),
-    LineBotSdkError(line_bot_sdk::Error),
-    ReqwestError(reqwest::Error),
-    EnvError(std::env::VarError),
-}
+use thiserror::Error;
 
-impl std::fmt::Display for AppError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            AppError::BadRequest(errors) => write!(f, "Bad Request: {}", errors),
-            AppError::LineBotSdkError(errors) => write!(f, "line bot sdk error: {}", errors),
-            AppError::ReqwestError(errors) => write!(f, "reqwest error: {}", errors),
-            AppError::EnvError(errors) => write!(f, "env error: {}", errors),
-        }
-    }
+#[derive(Debug, Error)]
+pub enum AppError {
+    #[error("line bot sdk error: {0}")]
+    LineBotSdk(#[from] line_bot_sdk::Error),
+    #[error("reqwest error: {0}")]
+    Reqwest(#[from] reqwest::Error),
+    #[error("env error: {0}")]
+    Env(#[from] std::env::VarError),
+    #[error("internal error: {0}")]
+    Internal(String),
 }
