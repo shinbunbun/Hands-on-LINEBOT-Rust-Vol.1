@@ -1,5 +1,3 @@
-use std::env;
-
 use line_bot_sdk::{
     models::{
         action::{
@@ -12,9 +10,8 @@ use line_bot_sdk::{
         },
         message::{
             flex::{
-                FlexBlockStyle, FlexBox, FlexBoxComponent, FlexBubble, FlexBubbleStyles,
-                FlexButton, FlexCarousel, FlexContainer, FlexHero, FlexImage, FlexMessage,
-                FlexSeparator, FlexText,
+                FlexBlockStyle, FlexBox, FlexBubble, FlexBubbleStyles, FlexButton, FlexImage,
+                FlexMessage, FlexSeparator, FlexText,
             },
             imagemap::ImagemapURIAction,
             quick_reply::{QuickReply, QuickReplyItem},
@@ -32,7 +29,7 @@ use line_bot_sdk::{
     Client,
 };
 
-use crate::{error::AppError, news, weather};
+use crate::error::AppError;
 
 pub async fn text_event(
     client: &Client,
@@ -522,7 +519,7 @@ pub async fn text_event(
             .into(),
         ],
         "天気予報" => {
-            let weather_api_res = reqwest::get("https://www.jma.go.jp/bosai/forecast/data/forecast/070000.json").await?.json::<weather::Root>().await?;
+            let weather_api_res = reqwest::get("https://www.jma.go.jp/bosai/forecast/data/forecast/070000.json").await?.json::<crate::weather::Root>().await?;
             let text = format!("【天気予報】\n\n{}: {}\n{}: {}\n{}: {}",
              weather_api_res[0].time_series[0].time_defines[0],
              weather_api_res[0].time_series[0].areas[2].weathers.as_ref().unwrap_or(&vec!["".to_string()])[0],
@@ -542,10 +539,10 @@ pub async fn text_event(
             ))
             .build()?;
 
-            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY")?))
+            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", std::env::var("NEWS_API_KEY")?))
             .send()
             .await?
-            .json::<news::Root>()
+            .json::<crate::news::Root>()
             .await?;
 
             let mut message: Vec<MessageObject> = Vec::new();
@@ -576,17 +573,17 @@ pub async fn text_event(
             ))
             .build()?;
 
-            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY")?))
+            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", std::env::var("NEWS_API_KEY")?))
             .send()
             .await?
-            .json::<news::Root>()
+            .json::<crate::news::Root>()
             .await?;
 
             let mut message = FlexMessage::builder()
             .alt_text("ニュース一覧")
             .contents(
-                FlexContainer::Carousel(
-                    FlexCarousel::builder()
+               line_bot_sdk::models::message::flex::FlexContainer::Carousel(
+                line_bot_sdk::models::message::flex::FlexCarousel::builder()
                     .contents(
                         vec![]
                     ).build()
@@ -595,11 +592,11 @@ pub async fn text_event(
 
             let articles = news_api_res.articles;
             for article in articles {
-                if let FlexContainer::Carousel(ref mut carousel) = message.contents {
+                if let line_bot_sdk::models::message::flex::FlexContainer::Carousel(ref mut carousel) = message.contents {
                     carousel.contents.push(FlexBubble::builder()
                     .size("kilo")
                     .hero(
-                        FlexHero::Image(
+                        line_bot_sdk::models::message::flex::FlexHero::Image(
                             FlexImage::builder()
                             .url(&article.url_to_image.unwrap_or_else(||"https://raw.githubusercontent.com/shinbunbun/aizuhack-bot/master/media/imagemap.png".to_owned()))
                             .size("full")
@@ -614,7 +611,7 @@ pub async fn text_event(
                         .layout("vertical")
                         .contents(
                             vec![
-                                FlexBoxComponent::Text(
+                                line_bot_sdk::models::message::flex::FlexBoxComponent::Text(
                                     Box::new(FlexText::builder()
                                     .weight("bold")
                                     .size("sm")
@@ -622,14 +619,14 @@ pub async fn text_event(
                                     .text(&article.title.unwrap_or_else(|| "No title".to_string()))
                                     .build())
                                 ),
-                                FlexBoxComponent::Text(
+                                line_bot_sdk::models::message::flex::FlexBoxComponent::Text(
                                     Box::new(FlexText::builder()
                                     .size("xs")
                                     .wrap(true)
                                     .text(&article.published_at.unwrap_or_else(|| "No published_at".to_string()))
                                     .build())
                                 ),
-                                FlexBoxComponent::Text(
+                                line_bot_sdk::models::message::flex::FlexBoxComponent::Text(
                                     Box::new(FlexText::builder()
                                     .size("sm")
                                     .wrap(true)
@@ -646,7 +643,7 @@ pub async fn text_event(
                         .layout("vertical")
                         .contents(
                             vec![
-                                FlexBoxComponent::Button(
+                                line_bot_sdk::models::message::flex::FlexBoxComponent::Button(
                                     FlexButton::builder()
                                     .action(
                                         URIAction::builder()
