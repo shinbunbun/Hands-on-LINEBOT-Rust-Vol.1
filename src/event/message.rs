@@ -22,7 +22,7 @@ pub async fn index(client: &Client, event: &Event) -> Result<Option<Vec<MessageO
     let message = event
         .message
         .as_ref()
-        .ok_or_else(|| AppError::BadRequest("Message not found".to_string()))?;
+        .ok_or_else(|| AppError::Internal("Message not found".to_string()))?;
     match message {
         Message::Text(text_message) => text::text_event(client, event, text_message).await,
         Message::Image(image_message) => image::handler(image_message),

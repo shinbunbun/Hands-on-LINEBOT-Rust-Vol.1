@@ -12,11 +12,11 @@ pub async fn index(event: &Event) -> Result<Option<Vec<MessageObject>>, AppError
             event
                 .joined
                 .as_ref()
-                .ok_or_else(|| AppError::BadRequest("joined not found".to_string()))?
+                .ok_or_else(|| AppError::Internal("joined not found".to_string()))?
                 .members[0]
                 .user_id
                 .as_ref()
-                .ok_or_else(|| AppError::BadRequest("userId not found".to_string()))?
+                .ok_or_else(|| AppError::Internal("userId not found".to_string()))?
         ))
         .build()
         .into()]))
