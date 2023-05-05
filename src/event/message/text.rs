@@ -587,7 +587,7 @@ pub async fn text_event(
             .json::<news::Root>()
             .await
             .map_err(AppError::ReqwestError)?;
-        
+
             let mut message = FlexMessage::builder()
             .alt_text("ニュース一覧")
             .contents(
@@ -613,7 +613,7 @@ pub async fn text_event(
                             .build()
                             .into()
                         )
-                        
+
                     )
                     .body(
                         FlexBox::builder()
