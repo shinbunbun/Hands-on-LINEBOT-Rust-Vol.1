@@ -1,5 +1,3 @@
-use std::env;
-
 use line_bot_sdk::{
     models::{
         action::{
@@ -12,9 +10,8 @@ use line_bot_sdk::{
         },
         message::{
             flex::{
-                FlexBlockStyle, FlexBox, FlexBoxComponent, FlexBubble, FlexBubbleStyles,
-                FlexButton, FlexCarousel, FlexContainer, FlexHero, FlexImage, FlexMessage,
-                FlexSeparator, FlexText,
+                FlexBlockStyle, FlexBox, FlexBubble, FlexBubbleStyles, FlexButton, FlexImage,
+                FlexMessage, FlexSeparator, FlexText,
             },
             imagemap::ImagemapURIAction,
             quick_reply::{QuickReply, QuickReplyItem},
@@ -32,7 +29,7 @@ use line_bot_sdk::{
     Client,
 };
 
-use crate::{error::AppError, news, weather};
+use crate::error::AppError;
 
 pub async fn text_event(
     client: &Client,
@@ -41,7 +38,7 @@ pub async fn text_event(
 ) -> Result<Option<Vec<MessageObject>>, AppError> {
     let messages: Vec<MessageObject> = match message.text.as_str() {
         "こんにちは" => vec![
-            TextMessage::builder().text("こんにちは世界").build().into(),
+            TextMessage::builder().text("Hello, World").build().into(),
         ],
         "複数メッセージ" => vec![
             TextMessage::builder().text("Hello, user").build().into(),
@@ -430,242 +427,6 @@ pub async fn text_event(
                     .into(),
                 ]
             }
-        },
-        "おはよう" => vec![
-            TextMessage::builder().text("Good Morning!").build().into(),
-        ],
-        "予定" => vec![
-            TextMessage::builder()
-            .text("予定を知りたい曜日を選んでください")
-            .quick_reply(
-                QuickReply::builder()
-                .items(vec![
-                    QuickReplyItem::builder()
-                    .action(
-                        MessageAction::builder()
-                        .label("月曜日")
-                        .text("月曜日の予定")
-                        .build()
-                        .into()
-                    )
-                    .build(),
-                    QuickReplyItem::builder()
-                    .action(
-                        MessageAction::builder()
-                        .label("火曜日")
-                        .text("火曜日の予定")
-                        .build()
-                        .into()
-                    )
-                    .build(),
-                    QuickReplyItem::builder()
-                    .action(
-                        MessageAction::builder()
-                        .label("水曜日")
-                        .text("水曜日の予定")
-                        .build()
-                        .into()
-                    )
-                    .build(),
-                    QuickReplyItem::builder()
-                    .action(
-                        MessageAction::builder()
-                        .label("木曜日")
-                        .text("木曜日の予定")
-                        .build()
-                        .into()
-                    )
-                    .build(),
-                    QuickReplyItem::builder()
-                    .action(
-                        MessageAction::builder()
-                        .label("金曜日")
-                        .text("金曜日の予定")
-                        .build()
-                        .into()
-                    )
-                    .build(),
-                ])
-                .build()
-            )
-            .build()
-            .into(),
-        ],
-        "月曜日の予定" => vec![
-            TextMessage::builder()
-            .text("1. 力学\n2. 力学\n3. 力学\n4. 力学\n5. 微積分\n6. 微積分")
-            .build()
-            .into(),
-        ],
-        "火曜日の予定" => vec![
-            TextMessage::builder()
-            .text("3. プログ0\n4. プログ0\n5. プログ0\n6. プログ0\n7. Eng2\n8. プログ0\n9. 経済学\n10. 経済学")
-            .build()
-            .into(),
-        ],
-        "水曜日の予定" => vec![
-            TextMessage::builder()
-            .text("3. 微積分\n4. 微積分")
-            .build()
-            .into(),
-        ],
-        "木曜日の予定" => vec![
-            TextMessage::builder()
-            .text("1. 力学\n2. 力学\n3. 力学\n4. 力学\n5. 微積分\n6. 微積分\n7. 体育実技\n8. 体育実技")
-            .build()
-            .into(),
-        ],
-        "金曜日の予定" => vec![
-            TextMessage::builder()
-            .text("3. プログ0\n4. プログ0\n5. プログ0\n6. プログ0\n7. Eng2\n8. プログ0\n9. 経済学\n10. 経済学")
-            .build()
-            .into(),
-        ],
-        "天気予報" => {
-            let weather_api_res = reqwest::get("https://www.jma.go.jp/bosai/forecast/data/forecast/070000.json").await?.json::<weather::Root>().await?;
-            let text = format!("【天気予報】\n\n{}: {}\n{}: {}\n{}: {}",
-             weather_api_res[0].time_series[0].time_defines[0],
-             weather_api_res[0].time_series[0].areas[2].weathers.as_ref().unwrap_or(&vec!["".to_string()])[0],
-             weather_api_res[0].time_series[0].time_defines[1],
-             weather_api_res[0].time_series[0].areas[2].weathers.as_ref().unwrap_or(&vec!["".to_string()])[1],
-             weather_api_res[0].time_series[0].time_defines[2],
-             weather_api_res[0].time_series[0].areas[2].weathers.as_ref().unwrap_or(&vec!["".to_string()])[2],
-            );
-            vec![TextMessage::builder().text(&text).build().into()]
-        },
-        "ニュース1" => {
-            let client = reqwest::Client::builder()
-            .user_agent(concat!(
-                env!("CARGO_PKG_NAME"),
-                "/",
-                env!("CARGO_PKG_VERSION"),
-            ))
-            .build()?;
-
-            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY")?))
-            .send()
-            .await?
-            .json::<news::Root>()
-            .await?;
-
-            let mut message: Vec<MessageObject> = Vec::new();
-
-            let articles = news_api_res.articles;
-            for article in articles {
-                message.push(
-                    TextMessage::builder()
-                    .text(&format!(
-                        "【画像URL】: {}\n【タイトル】: {}\n【公開日】: {}\n【概要】: {}\n【記事のURL】: {}\n【掲載元】: {}",
-                        article.url_to_image.unwrap_or_else(||"null".to_string()),
-                        article.title.unwrap_or_else(|| "null".to_string()),
-                        article.published_at.unwrap_or_else(|| "null".to_string()),
-                        article.description.unwrap_or_else(||"null".to_string()),
-                        article.url.unwrap_or_else(||"null".to_string()),
-                        article.source.name.unwrap_or_else(||"null".to_string())))
-                    .build().into()
-                );
-            }
-            message
-        },
-        "ニュース2" => {
-            let client = reqwest::Client::builder()
-            .user_agent(concat!(
-                env!("CARGO_PKG_NAME"),
-                "/",
-                env!("CARGO_PKG_VERSION"),
-            ))
-            .build()?;
-
-            let news_api_res = client.get(&format!("https://newsapi.org/v2/top-headlines?country=jp&apiKey={}&pageSize=5", env::var("NEWS_API_KEY")?))
-            .send()
-            .await?
-            .json::<news::Root>()
-            .await?;
-
-            let mut message = FlexMessage::builder()
-            .alt_text("ニュース一覧")
-            .contents(
-                FlexContainer::Carousel(
-                    FlexCarousel::builder()
-                    .contents(
-                        vec![]
-                    ).build()
-                )
-            ).build();
-
-            let articles = news_api_res.articles;
-            for article in articles {
-                if let FlexContainer::Carousel(ref mut carousel) = message.contents {
-                    carousel.contents.push(FlexBubble::builder()
-                    .size("kilo")
-                    .hero(
-                        FlexHero::Image(
-                            FlexImage::builder()
-                            .url(&article.url_to_image.unwrap_or_else(||"https://raw.githubusercontent.com/shinbunbun/aizuhack-bot/master/media/imagemap.png".to_owned()))
-                            .size("full")
-                            .aspect_mode("cover")
-                            .build()
-                            .into()
-                        )
-
-                    )
-                    .body(
-                        FlexBox::builder()
-                        .layout("vertical")
-                        .contents(
-                            vec![
-                                FlexBoxComponent::Text(
-                                    Box::new(FlexText::builder()
-                                    .weight("bold")
-                                    .size("sm")
-                                    .wrap(true)
-                                    .text(&article.title.unwrap_or_else(|| "No title".to_string()))
-                                    .build())
-                                ),
-                                FlexBoxComponent::Text(
-                                    Box::new(FlexText::builder()
-                                    .size("xs")
-                                    .wrap(true)
-                                    .text(&article.published_at.unwrap_or_else(|| "No published_at".to_string()))
-                                    .build())
-                                ),
-                                FlexBoxComponent::Text(
-                                    Box::new(FlexText::builder()
-                                    .size("sm")
-                                    .wrap(true)
-                                    .text(&article.description.unwrap_or_else(|| "No description".to_string()))
-                                    .build())
-                                ),
-                            ]
-                        )
-                        .spacing("md")
-                        .build()
-                    )
-                    .footer(
-                        FlexBox::builder()
-                        .layout("vertical")
-                        .contents(
-                            vec![
-                                FlexBoxComponent::Button(
-                                    FlexButton::builder()
-                                    .action(
-                                        URIAction::builder()
-                                        .uri(&article.url.unwrap_or_else(|| "https://example.com".to_string()))
-                                        .label(&article.source.name.unwrap_or_else(|| "No source name".to_string()))
-                                        .build()
-                                        .into()
-                                    )
-                                    .style("primary")
-                                    .build()
-                                    .into()
-                                )
-                            ]
-                        )
-                        .build()
-                    ).build())
-                }
-            }
-            vec![message.into()]
         },
         _ => vec![
                 TextMessage::builder()
